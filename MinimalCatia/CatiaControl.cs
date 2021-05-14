@@ -37,8 +37,12 @@ namespace MinimalCatia
                     // cc.ErzeugeBalken(300);
                     // Console.WriteLine("4");
 
-                    cc.ErzeugeZylinderUndGewinde();
-                    Console.WriteLine("Zyl");
+                    cc.ErzeugeZylinder();
+                    Console.WriteLine("Schaft");
+
+                    cc.ErzeugeGewindeFeature();
+                    // cc.ErzeugeGewindeHelix();
+                    Console.WriteLine("Gewinde");
                 }
                 else
                 {

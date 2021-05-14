@@ -13,7 +13,9 @@ namespace MinimalCatia
         MECMOD.PartDocument hsp_catiaPart;
         MECMOD.Sketch hsp_catiaSkizze;
         ShapeFactory SF;
+        Pad mySchaft;
 
+        #region MinimalCatia
         public bool CATIALaeuft()
         {
             try
@@ -130,8 +132,11 @@ namespace MinimalCatia
             // Part aktualisieren
             hsp_catiaPart.Part.Update();
         }
+        #endregion
 
-        internal void ErzeugeZylinderUndGewinde(double durchmesser = 8, double laenge = 60)
+        #region Schraube
+
+        internal void ErzeugeZylinder(double durchmesser = 8, double laenge = 60)
         {
             // Hauptkoerper in Bearbeitung definieren
             hsp_catiaPart.Part.InWorkObject = hsp_catiaPart.Part.MainBody;
@@ -155,9 +160,15 @@ namespace MinimalCatia
 
             // Schraubenschaft durch ein Pad erstellen
             Reference RefMySchaft = hsp_catiaPart.Part.CreateReferenceFromObject(hsp_catiaSkizze);
-            Pad mySchaft = SF.AddNewPadFromRef(RefMySchaft, laenge);
+            mySchaft = SF.AddNewPadFromRef(RefMySchaft, laenge);
             hsp_catiaPart.Part.Update();
 
+
+        }
+
+        // Erzeugt ein Gewindefeature auf dem vorher erzeugten Schaft.
+        internal void ErzeugeGewindeFeature()
+        {
             // Gewinde...
             // ... Referenzen lateral und limit erzeugen
             Reference RefMantelflaeche = hsp_catiaPart.Part.CreateReferenceFromBRepName(
@@ -181,6 +192,17 @@ namespace MinimalCatia
             // Part update und fertig
             hsp_catiaPart.Part.Update();
         }
+
+        internal void ErzeugeGewindeHelix()
+        {
+        }
+
+        public void GewindeSkizze()
+        {
+
+        }
+
+        #endregion
 
     }
 }
