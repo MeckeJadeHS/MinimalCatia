@@ -37,11 +37,13 @@ namespace MinimalCatia
                     // cc.ErzeugeBalken(300);
                     // Console.WriteLine("4");
 
-                    cc.ErzeugeZylinder();
+                    Schraube dieSchraube = new Schraube(60, 50, "Standartgewinde", "M8", 5.3d, 4d, 1.25d);
+
+                    cc.ErzeugeZylinder(dieSchraube);
                     Console.WriteLine("Schaft");
 
-                    cc.ErzeugeGewindeFeature();
-                    // cc.ErzeugeGewindeHelix();
+                    // cc.ErzeugeGewindeFeature();
+                    cc.ErzeugeGewindeHelix(dieSchraube);
                     Console.WriteLine("Gewinde");
                 }
                 else
