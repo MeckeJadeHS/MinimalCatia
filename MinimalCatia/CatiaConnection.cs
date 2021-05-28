@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Windows;
+using HybridShapeTypeLib;
 using INFITF;
 using MECMOD;
 using PARTITF;
@@ -10,8 +11,14 @@ namespace MinimalCatia
     class CatiaConnection
     {
         INFITF.Application hsp_catiaApp;
-        MECMOD.PartDocument hsp_catiaPart;
-        MECMOD.Sketch hsp_catiaProfil;
+        MECMOD.PartDocument hsp_catiaPartDoc;
+        MECMOD.Sketch hsp_catiaSkizze;
+
+        ShapeFactory SF;
+        HybridShapeFactory HSF;
+
+        Part myPart;
+        Sketches mySketches;
 
         public bool CATIALaeuft()
         {
@@ -31,14 +38,20 @@ namespace MinimalCatia
         public Boolean ErzeugePart()
         {
             INFITF.Documents catDocuments1 = hsp_catiaApp.Documents;
-            hsp_catiaPart = catDocuments1.Add("Part") as MECMOD.PartDocument;
+            hsp_catiaPartDoc = catDocuments1.Add("Part") as MECMOD.PartDocument;
+            myPart = hsp_catiaPartDoc.Part;
+
             return true;
         }
 
         public void ErstelleLeereSkizze()
         {
+            // Factories für das Erzeugen von Modellelementen (Std und Hybrid)
+            SF = (ShapeFactory)myPart.ShapeFactory;
+            HSF = (HybridShapeFactory)myPart.HybridShapeFactory;
+
             // geometrisches Set auswaehlen und umbenennen
-            HybridBodies catHybridBodies1 = hsp_catiaPart.Part.HybridBodies;
+            HybridBodies catHybridBodies1 = myPart.HybridBodies;
             HybridBody catHybridBody1;
             try
             {
@@ -52,17 +65,27 @@ namespace MinimalCatia
                 return;
             }
             catHybridBody1.set_Name("Profile");
-            // neue Skizze im ausgewaehlten geometrischen Set anlegen
-            Sketches catSketches1 = catHybridBody1.HybridSketches;
-            OriginElements catOriginElements = hsp_catiaPart.Part.OriginElements;
-            Reference catReference1 = (Reference)catOriginElements.PlaneYZ;
-            hsp_catiaProfil = catSketches1.Add(catReference1);
+
+            // neue Skizze im ausgewaehlten geometrischen Set auf eine Offset Ebene legen
+            mySketches = catHybridBody1.HybridSketches;
+            OriginElements catOriginElements = myPart.OriginElements;
+            HybridShapePlaneOffset hybridShapePlaneOffset1 = HSF.AddNewPlaneOffset(
+                (Reference)catOriginElements.PlaneYZ, 90.000000, false);
+            hybridShapePlaneOffset1.set_Name("OffsetEbene");
+            catHybridBody1.AppendHybridShape(hybridShapePlaneOffset1);
+            myPart.InWorkObject = hybridShapePlaneOffset1;
+            myPart.Update();
+
+            HybridShapes hybridShapes1 = catHybridBody1.HybridShapes;
+            Reference catReference1 = (Reference)hybridShapes1.Item("OffsetEbene");
+
+            hsp_catiaSkizze = mySketches.Add(catReference1);
 
             // Achsensystem in Skizze erstellen 
             ErzeugeAchsensystem();
 
             // Part aktualisieren
-            hsp_catiaPart.Part.Update();
+            myPart.Update();
         }
 
         private void ErzeugeAchsensystem()
@@ -70,17 +93,17 @@ namespace MinimalCatia
             object[] arr = new object[] {0.0, 0.0, 0.0,
                                          0.0, 1.0, 0.0,
                                          0.0, 0.0, 1.0 };
-            hsp_catiaProfil.SetAbsoluteAxisData(arr);
+            hsp_catiaSkizze.SetAbsoluteAxisData(arr);
         }
 
         public void ErzeugeProfil(Double b, Double h)
         {
             // Skizze umbenennen
-            hsp_catiaProfil.set_Name("Rechteck");
+            hsp_catiaSkizze.set_Name("Rechteck");
 
             // Rechteck in Skizze einzeichnen
             // Skizze oeffnen
-            Factory2D catFactory2D1 = hsp_catiaProfil.OpenEdition();
+            Factory2D catFactory2D1 = hsp_catiaSkizze.OpenEdition();
 
             // Rechteck erzeugen
 
@@ -108,25 +131,24 @@ namespace MinimalCatia
             catLine2D4.EndPoint = catPoint2D1;
 
             // Skizzierer verlassen
-            hsp_catiaProfil.CloseEdition();
+            hsp_catiaSkizze.CloseEdition();
             // Part aktualisieren
-            hsp_catiaPart.Part.Update();
+            myPart.Update();
         }
 
         public void ErzeugeBalken(Double l)
         {
             // Hauptkoerper in Bearbeitung definieren
-            hsp_catiaPart.Part.InWorkObject = hsp_catiaPart.Part.MainBody;
+            myPart.InWorkObject = myPart.MainBody;
 
             // Block(Balken) erzeugen
-            ShapeFactory catShapeFactory1 = (ShapeFactory)hsp_catiaPart.Part.ShapeFactory;
-            Pad catPad1 = catShapeFactory1.AddNewPad(hsp_catiaProfil, l);
+            Pad catPad1 = SF.AddNewPad(hsp_catiaSkizze, l);
 
             // Block umbenennen
             catPad1.set_Name("Balken");
 
             // Part aktualisieren
-            hsp_catiaPart.Part.Update();
+            myPart.Update();
         }
 
 
